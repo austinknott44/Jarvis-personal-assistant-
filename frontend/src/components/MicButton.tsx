@@ -8,9 +8,11 @@ import type { OrbState } from './StarSphere'
 export default function MicButton({
   agentOn,
   onOrbState,
+  onTranscript,
 }: {
   agentOn: boolean
   onOrbState: (s: OrbState) => void
+  onTranscript?: (role: string, text: string, turnComplete?: boolean) => void
 }) {
   const [active, setActive] = useState(false)
   const [error, setError] = useState('')
@@ -87,6 +89,8 @@ export default function MicButton({
       ws.onmessage = (ev) => {
         const msg = JSON.parse(ev.data)
         if (msg.type === 'audio') playPcm(msg.data, msg.rate || 24000)
+        else if (msg.type === 'transcript') onTranscript?.(msg.role, msg.text)
+        else if (msg.type === 'turn_complete') onTranscript?.('assistant', '', true)
         else if (msg.type === 'interrupted') flushPlayback() // barge-in
         else if (msg.type === 'error') { setError(msg.message); stop() }
       }

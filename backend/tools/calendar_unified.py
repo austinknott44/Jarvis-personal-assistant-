@@ -16,6 +16,14 @@ logger = logging.getLogger("jarvis.calendar")
 _WEEKDAYS = {"MO": 0, "TU": 1, "WE": 2, "TH": 3, "FR": 4, "SA": 5, "SU": 6}
 
 
+def _aware(dt: datetime | None) -> datetime | None:
+    """DB datetimes come back naive on SQLite and aware on Postgres —
+    normalize everything to UTC-aware before comparing."""
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+
+
 def _parse_dt(value: str) -> datetime | None:
     if not value:
         return None
@@ -44,12 +52,14 @@ def _expand_recurring(ev: CalendarEvent, window_start: datetime, window_end: dat
         for p in parts[1:]:
             if p.startswith("until:"):
                 until = _parse_dt(p.split(":", 1)[1])
-        duration = (ev.end_at - ev.start_at) if ev.end_at else timedelta(hours=1)
-        cursor = max(window_start, ev.start_at)
-        cursor = cursor.replace(hour=ev.start_at.hour, minute=ev.start_at.minute,
+        start_at = _aware(ev.start_at)
+        end_at = _aware(ev.end_at)
+        duration = (end_at - start_at) if end_at else timedelta(hours=1)
+        cursor = max(window_start, start_at)
+        cursor = cursor.replace(hour=start_at.hour, minute=start_at.minute,
                                 second=0, microsecond=0)
         while cursor <= window_end:
-            if cursor.weekday() in days and cursor >= ev.start_at and (not until or cursor <= until):
+            if cursor.weekday() in days and cursor >= start_at and (not until or cursor <= until):
                 out.append(_row(ev, cursor, cursor + duration, instance=True))
             cursor += timedelta(days=1)
     except Exception as exc:
@@ -87,10 +97,11 @@ def merged_events(days_back: int = 1, days_forward: int = 30) -> list[dict]:
     with db_session() as db:
         local = db.query(CalendarEvent).all()
     for ev in local:
+        start_at = _aware(ev.start_at)
         if ev.recurrence:
             events.extend(_expand_recurring(ev, window_start, window_end))
-        elif ev.start_at and window_start <= ev.start_at <= window_end:
-            events.append(_row(ev, ev.start_at, ev.end_at))
+        elif start_at and window_start <= start_at <= window_end:
+            events.append(_row(ev, start_at, _aware(ev.end_at)))
 
     events.sort(key=lambda e: e.get("start_at") or "")
     return events

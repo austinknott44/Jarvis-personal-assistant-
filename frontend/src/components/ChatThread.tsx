@@ -1,19 +1,31 @@
+// Chat thread — the single live transcript for BOTH typed chat and voice
+// sessions (voice transcripts stream in via the `transcript` prop).
 import { useEffect, useRef, useState } from 'react'
 import { api, type ChatTurn } from '../api'
+
+export interface TranscriptChunk {
+  seq: number        // monotonically increasing so re-renders don't re-append
+  role: string
+  text: string
+  turnComplete?: boolean
+}
 
 export default function ChatThread({
   agentOn,
   onThinking,
   greeting,
+  transcript,
 }: {
   agentOn: boolean
   onThinking: (thinking: boolean) => void
   greeting: string | null
+  transcript: TranscriptChunk | null
 }) {
-  const [turns, setTurns] = useState<ChatTurn[]>([])
+  const [turns, setTurns] = useState<(ChatTurn & { live?: boolean })[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const lastSeqRef = useRef(-1)
 
   useEffect(() => {
     api.chatHistory().then((r) => setTurns(r.history)).catch(() => {})
@@ -22,6 +34,23 @@ export default function ChatThread({
   useEffect(() => {
     if (greeting) setTurns((t) => [...t, { role: 'assistant', content: greeting }])
   }, [greeting])
+
+  // Voice transcript chunks: append to the current live bubble of the same
+  // role, or open a new one. turn_complete seals the live bubbles.
+  useEffect(() => {
+    if (!transcript || transcript.seq <= lastSeqRef.current) return
+    lastSeqRef.current = transcript.seq
+    setTurns((prev) => {
+      if (transcript.turnComplete) {
+        return prev.map((t) => ({ ...t, live: false }))
+      }
+      const last = prev[prev.length - 1]
+      if (last?.live && last.role === transcript.role) {
+        return [...prev.slice(0, -1), { ...last, content: last.content + transcript.text }]
+      }
+      return [...prev.map((t) => ({ ...t, live: false })), { role: transcript.role, content: transcript.text, live: true }]
+    })
+  }, [transcript])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -50,7 +79,9 @@ export default function ChatThread({
       <div className="flex-1 overflow-y-auto space-y-3 pr-2">
         {turns.length === 0 && (
           <p className="text-hud-dim text-sm text-center mt-8 hud-readout">
-            {agentOn ? 'Say something — Jarvis is listening.' : 'Flip the master toggle to wake Jarvis.'}
+            {agentOn
+              ? 'Type or talk — this is the live transcript. Ask "what can you do?"'
+              : 'Flip the master toggle to wake Jarvis.'}
           </p>
         )}
         {turns.map((t, i) => (
@@ -60,9 +91,10 @@ export default function ChatThread({
                 t.role === 'user'
                   ? 'bg-hud-blue/20 border border-hud-blue/40 text-slate-100'
                   : 'hud-panel text-hud-text'
-              }`}
+              } ${t.live ? 'opacity-90 border-dashed' : ''}`}
             >
               {t.content}
+              {t.live && <span className="hud-pulse text-hud-cyan"> ▍</span>}
             </div>
           </div>
         ))}
@@ -74,7 +106,7 @@ export default function ChatThread({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
           disabled={!agentOn}
-          placeholder={agentOn ? 'Message Jarvis…' : 'Jarvis is off'}
+          placeholder={agentOn ? 'Message Jarvis — or press the mic and just talk…' : 'Jarvis is off'}
           className="flex-1 bg-hud-panel border border-hud-border rounded-lg px-3 py-2 text-sm
                      focus:outline-none focus:border-hud-cyan/60 disabled:opacity-40"
         />

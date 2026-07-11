@@ -8,10 +8,12 @@ def load_all() -> None:
         email_cleanup,
         email_unified,
         investments,
+        market_movers,
         meals_mealie,
         memory_tools,
         news_rss,
         school_brightspace,
         tasks_deadlines,
+        weather,
         workouts_wger,
     )

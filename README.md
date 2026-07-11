@@ -49,6 +49,28 @@ Open http://localhost:5173, flip the toggle ON, and talk to Jarvis.
 Full setup (Google OAuth, Brightspace iCal, ntfy, Tailscale…) is in
 [WALKTHROUGH.md](WALKTHROUGH.md).
 
+## Home HUD layout
+
+Left: daily weather (Open-Meteo — free, keyless) → today's agenda →
+due-today / due-this-week counters → tomorrow's agenda. Center: the
+star-sphere orb with the chat thread beneath it, doubling as the live
+transcript for voice sessions. Right: news & key events (Google News +
+BBC RSS defaults, free and keyless, plus your own feeds) → three daily
+stock squares (ticker, name, price, day + 7-day change, one-line why —
+Alpha Vantage, cached once per day to stay inside the free 25-call cap)
+→ agent status (on/off, LLM calls today, errors, config notices). A
+**Financials** tab adds the full gainers/losers/most-active tables.
+
+## Data sources (all free)
+
+| Data | Source | Key needed |
+|---|---|---|
+| Weather | Open-Meteo | none |
+| News | Google News RSS + BBC (+ your RSS_FEEDS) | none |
+| Stock quotes/movers | Alpha Vantage free tier | free key |
+| Brain + voice | Gemini free tier | free key |
+| Push notifications | ntfy.sh | none |
+
 ## Safety model (short version)
 
 | Tier | What | Behavior |

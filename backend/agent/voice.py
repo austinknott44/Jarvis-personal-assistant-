@@ -38,6 +38,10 @@ async def run_voice_session(ws: WebSocket) -> None:
         response_modalities=["AUDIO"],
         system_instruction=_build_system_prompt(),
         tools=[types.Tool(function_declarations=gemini_declarations())],
+        # live transcripts of both sides — the HUD chat doubles as the
+        # running transcript of every voice session
+        input_audio_transcription=types.AudioTranscriptionConfig(),
+        output_audio_transcription=types.AudioTranscriptionConfig(),
     )
 
     try:
@@ -59,9 +63,21 @@ async def run_voice_session(ws: WebSocket) -> None:
                         return
 
             async def gemini_to_browser():
+                from agent.memory import remember_turn
+                user_buf, jarvis_buf = [], []
                 while True:
                     async for response in session.receive():
                         server = response.server_content
+                        if server and server.input_transcription and server.input_transcription.text:
+                            user_buf.append(server.input_transcription.text)
+                            await ws.send_json({"type": "transcript", "role": "user",
+                                                "text": server.input_transcription.text,
+                                                "final": False})
+                        if server and server.output_transcription and server.output_transcription.text:
+                            jarvis_buf.append(server.output_transcription.text)
+                            await ws.send_json({"type": "transcript", "role": "assistant",
+                                                "text": server.output_transcription.text,
+                                                "final": False})
                         if server and server.interrupted:
                             await ws.send_json({"type": "interrupted"})  # barge-in
                         if server and server.model_turn:
@@ -81,6 +97,13 @@ async def run_voice_session(ws: WebSocket) -> None:
                                     id=fc.id, name=fc.name, response={"result": result}))
                             await session.send_tool_response(function_responses=responses)
                         if server and server.turn_complete:
+                            # persist the finished voice turns to memory
+                            if user_buf:
+                                remember_turn("user", "".join(user_buf), modality="voice")
+                                user_buf.clear()
+                            if jarvis_buf:
+                                remember_turn("assistant", "".join(jarvis_buf), modality="voice")
+                                jarvis_buf.clear()
                             await ws.send_json({"type": "turn_complete"})
 
             up = asyncio.create_task(browser_to_gemini())

@@ -105,17 +105,64 @@ def _generate_with_backoff(client, model, contents, config):
     delay = 2
     for attempt in range(RETRIES):
         try:
-            return client.models.generate_content(model=model, contents=contents, config=config)
+            resp = client.models.generate_content(model=model, contents=contents, config=config)
+            _record_llm(ok=True)
+            return resp
         except Exception as exc:
             msg = str(exc)
             if "429" in msg or "RESOURCE_EXHAUSTED" in msg.upper():
+                _record_llm(ok=False, error="rate-limited (free tier 429)")
                 logger.warning("Gemini rate limit (attempt %d) — backing off %ds", attempt + 1, delay)
                 time.sleep(delay)
                 delay *= 2
                 continue
+            _record_llm(ok=False, error=msg[:200])
             logger.exception("Gemini call failed")
             return None
     return None
+
+
+def _record_llm(ok: bool, error: str = "") -> None:
+    """Track LLM usage + recent errors for the HUD status tile (cache table,
+    domain 'llm_stats'). Never lets bookkeeping break a call."""
+    try:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from db.models import CacheEntry, utcnow
+        from db.session import db_session
+
+        today = datetime.now(ZoneInfo(get_settings().timezone)).strftime("%Y-%m-%d")
+        with db_session() as db:
+            entry = db.query(CacheEntry).filter(CacheEntry.domain == "llm_stats").first()
+            stats = dict(entry.payload) if entry and entry.payload.get("date") == today else {
+                "date": today, "calls": 0, "errors": 0, "recent_errors": []}
+            stats["calls"] += 1
+            if not ok:
+                stats["errors"] += 1
+                stats["recent_errors"] = ([{"at": utcnow().isoformat()[11:19], "error": error}]
+                                          + stats.get("recent_errors", []))[:5]
+            stats["last_call_at"] = utcnow().isoformat()
+            if entry:
+                entry.payload = stats
+                entry.fetched_at = utcnow()
+            else:
+                db.add(CacheEntry(domain="llm_stats", payload=stats))
+    except Exception:
+        logger.debug("llm stats bookkeeping failed", exc_info=True)
+
+
+def get_llm_stats() -> dict:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from db.models import CacheEntry
+    from db.session import db_session
+
+    today = datetime.now(ZoneInfo(get_settings().timezone)).strftime("%Y-%m-%d")
+    with db_session() as db:
+        entry = db.query(CacheEntry).filter(CacheEntry.domain == "llm_stats").first()
+        if entry and entry.payload.get("date") == today:
+            return entry.payload
+    return {"date": today, "calls": 0, "errors": 0, "recent_errors": []}
 
 
 def quick_summarize(prompt: str) -> str:

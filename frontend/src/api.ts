@@ -62,6 +62,40 @@ export interface InboxMsg {
   id: string; account: string; subject: string; sender: string; date: string
   snippet: string; unread: boolean; needs_reply?: boolean; deadline_flag?: boolean
 }
+export interface WeatherDay {
+  date: string; desc: string; glyph: string; high: number; low: number
+  precip_pct: number; sunrise: string; sunset: string
+}
+export interface Weather {
+  error?: string
+  city?: string
+  current?: { temp: number; feels_like: number; humidity: number; wind_mph: number; desc: string; glyph: string }
+  hours?: { time: string; temp: number; precip_pct: number; glyph: string; desc: string }[]
+  today?: WeatherDay | null
+  tomorrow?: WeatherDay | null
+}
+export interface StockPick {
+  ticker: string; name: string; price: number; change_pct: string
+  week_change_pct: number | null; why: string
+}
+export interface MoverRow { ticker: string; price: number; change_pct: string; volume: string }
+export interface Movers {
+  error?: string
+  gainers?: MoverRow[]; losers?: MoverRow[]; most_active?: MoverRow[]
+  disclaimer?: string
+}
+export interface AgentStatus {
+  agent_on: boolean
+  llm: { model: string; calls_today: number; errors_today: number; last_call_at: string | null }
+  pending_approvals: number
+  problems: string[]
+  all_clear: boolean
+}
+export interface NewsResult {
+  summary?: string
+  headlines?: { source: string; title: string; link: string; published: string }[]
+  note?: string
+}
 export interface SyllabusExtraction {
   error?: string
   course_name?: string
@@ -109,6 +143,12 @@ export const api = {
   workout: () => get<{ split: SplitDay[] }>('/workout'),
   setWorkoutDay: (day: string, focus: string, exercises: string) =>
     post('/workout/day', { day, focus, exercises }),
+
+  weather: () => get<Weather>('/weather'),
+  marketPicks: () => get<{ picks: StockPick[]; note?: string; disclaimer: string }>('/market/picks'),
+  marketMovers: () => get<Movers>('/market/movers'),
+  agentStatus: () => get<AgentStatus>('/status'),
+  news: () => get<NewsResult>('/news'),
 
   brief: () => get<{ text?: string; date?: string; note?: string }>('/brief'),
   briefRun: () => post('/brief/run'),

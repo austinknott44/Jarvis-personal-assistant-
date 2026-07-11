@@ -314,6 +314,59 @@ def news() -> dict:
     return news_rss.get_news()
 
 
+# ---------- weather + market + status ----------
+
+@app.get("/weather")
+def weather() -> dict:
+    from tools import weather as weather_tool
+    return weather_tool.fetch_weather()
+
+
+@app.get("/market/picks")
+def market_picks() -> dict:
+    from tools import market_movers
+    return market_movers.fetch_daily_picks()
+
+
+@app.get("/market/movers")
+def market_movers_route() -> dict:
+    from tools import market_movers
+    return market_movers.fetch_movers()
+
+
+@app.get("/status")
+def status(db: Session = Depends(get_db)) -> dict:
+    """Agent status for the HUD tile: on/off, LLM usage today, recent errors,
+    pending approvals, integration problems."""
+    from agent.brain import get_llm_stats
+    s = get_settings()
+    stats = get_llm_stats()
+    pending = db.query(Approval).filter(Approval.status == "pending").count()
+
+    problems: list[str] = []
+    if not s.gemini_api_key:
+        problems.append("GEMINI_API_KEY missing — the brain is offline")
+    if not s.alphavantage_api_key:
+        problems.append("No Alpha Vantage key — market data disabled")
+    if not s.ntfy_topic:
+        problems.append("ntfy not set — no phone pushes for approvals")
+    for e in stats.get("recent_errors", []):
+        problems.append(f"LLM {e['at']}: {e['error']}")
+
+    return {
+        "agent_on": core.is_on(),
+        "llm": {
+            "model": s.gemini_text_model,
+            "calls_today": stats.get("calls", 0),
+            "errors_today": stats.get("errors", 0),
+            "last_call_at": stats.get("last_call_at"),
+        },
+        "pending_approvals": pending,
+        "problems": problems,
+        "all_clear": not problems,
+    }
+
+
 # ---------- briefs ----------
 
 @app.get("/brief")

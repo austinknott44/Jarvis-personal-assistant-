@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     # Morning brief
     morning_brief_time: str = "07:00"
 
+    # Weather (Open-Meteo — free, no API key). Defaults: West Lafayette, IN.
+    weather_lat: float = 40.4259
+    weather_lon: float = -86.9081
+    weather_city: str = "West Lafayette"
+
     @property
     def rss_feed_list(self) -> list[str]:
         return [u.strip() for u in self.rss_feeds.split(",") if u.strip()]
