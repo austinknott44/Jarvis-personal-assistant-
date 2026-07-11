@@ -51,15 +51,25 @@ Full setup (Google OAuth, Brightspace iCal, ntfy, Tailscale…) is in
 
 ## Home HUD layout
 
-Left: daily weather (Open-Meteo — free, keyless) → today's agenda →
-due-today / due-this-week counters → tomorrow's agenda. Center: the
-star-sphere orb with the chat thread beneath it, doubling as the live
-transcript for voice sessions. Right: news & key events (Google News +
-BBC RSS defaults, free and keyless, plus your own feeds) → three daily
-stock squares (ticker, name, price, day + 7-day change, one-line why —
-Alpha Vantage, cached once per day to stay inside the free 25-call cap)
-→ agent status (on/off, LLM calls today, errors, config notices). A
-**Financials** tab adds the full gainers/losers/most-active tables.
+Left: daily weather (Open-Meteo — free, keyless) → today's agenda
+(all-day events pinned on top) → due-today / due-this-week counters →
+tomorrow's agenda → inbox summary (unread / needs-reply). Center: the
+star-sphere orb at true screen center, with the chat thread beneath it
+doubling as the live transcript for voice sessions. Right: news & key
+events (Google News + BBC RSS defaults, free and keyless, plus your own
+feeds, with an LLM "key read") → three daily stock squares (ticker, name,
+price, day + 7-day change, one-line why — Alpha Vantage, cached once per
+day to stay inside the free 25-call cap) → agent status (on/off, LLM
+calls today, errors, config notices).
+
+A left-nav **Inbox** view shows the full unified 3-account email list
+with needs-reply/deadline flags and the marketing-cleanup runner. The
+**Financials** tab adds the **Strategist Desk** — a daily options-
+strategist note (market read, defined-risk structures with strikes,
+expiries, and IV from Alpha Vantage's free options chains, portfolio
+note, and what to avoid) — plus picks with reasoning and full
+gainers/losers/most-active tables. Educational only; Jarvis has no
+trade capability by design. All API setup links: [SETUP_APIS.md](SETUP_APIS.md).
 
 ## Data sources (all free)
 

@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { api, type AgentStatus, type NewsResult, type StockPick } from '../api'
 
-function Panel({ title, children, right }: { title: string; children: React.ReactNode; right?: React.ReactNode }) {
+function Panel({ title, children, right, grow }: { title: string; children: React.ReactNode; right?: React.ReactNode; grow?: boolean }) {
   return (
-    <div className="hud-panel p-3">
-      <div className="flex items-center justify-between mb-2">
+    <div className={`hud-panel p-3 ${grow ? 'flex-1 min-h-40 flex flex-col overflow-hidden' : ''}`}>
+      <div className="flex items-center justify-between mb-2 shrink-0">
         <h3 className="hud-readout text-[10px] uppercase tracking-widest text-hud-cyan/80">{title}</h3>
         {right}
       </div>
@@ -34,17 +34,20 @@ export default function RightColumn({ refreshKey }: { refreshKey: number }) {
   }, [refreshKey])
 
   return (
-    <div className="space-y-3">
-      {/* ---- News & key events ---- */}
-      <Panel title="News & Key Events">
+    <div className="h-full flex flex-col gap-3">
+      {/* ---- News & key events (grows to fill) ---- */}
+      <Panel title="News & Key Events" grow>
         {!news && <p className="text-hud-dim text-xs">Loading headlines…</p>}
         {news?.summary && !news.summary.startsWith('(') && (
-          <p className="text-xs mb-2 text-hud-text/90 leading-relaxed">{news.summary}</p>
+          <div className="shrink-0 mb-2 pb-2 border-b border-hud-border/60">
+            <p className="hud-readout text-[9px] uppercase text-hud-cyan/60 mb-1">Key read</p>
+            <p className="text-xs text-hud-text/90 leading-relaxed">{news.summary}</p>
+          </div>
         )}
-        <div className="space-y-1 max-h-44 overflow-y-auto">
-          {news?.headlines?.slice(0, 8).map((h, i) => (
+        <div className="space-y-1.5 overflow-y-auto flex-1">
+          {news?.headlines?.slice(0, 16).map((h, i) => (
             <a key={i} href={h.link} target="_blank" rel="noreferrer"
-               className="block text-xs truncate text-hud-text hover:text-hud-cyan transition-colors">
+               className="block text-xs text-hud-text hover:text-hud-cyan transition-colors leading-snug">
               <span className="text-hud-dim hud-readout text-[9px] uppercase mr-1">{h.source.slice(0, 18)}</span>
               {h.title}
             </a>
@@ -54,7 +57,7 @@ export default function RightColumn({ refreshKey }: { refreshKey: number }) {
       </Panel>
 
       {/* ---- Three stock squares ---- */}
-      <div>
+      <div className="shrink-0">
         <h3 className="hud-readout text-[10px] uppercase tracking-widest text-hud-cyan/80 mb-2 px-1">
           Stocks on the radar today
         </h3>
@@ -89,6 +92,7 @@ export default function RightColumn({ refreshKey }: { refreshKey: number }) {
       </div>
 
       {/* ---- Agent status ---- */}
+      <div className="shrink-0">
       <Panel
         title="Agent Status"
         right={
@@ -133,6 +137,7 @@ export default function RightColumn({ refreshKey }: { refreshKey: number }) {
           </div>
         )}
       </Panel>
+      </div>
     </div>
   )
 }

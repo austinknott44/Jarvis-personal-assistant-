@@ -109,21 +109,32 @@ export default function PreferencesTab() {
 
       <div className="hud-panel p-4 space-y-2">
         <h3 className="hud-readout text-xs uppercase text-hud-cyan/80">Integrations</h3>
-        <div className="grid grid-cols-2 gap-y-1.5 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 text-sm">
           {([
-            ['Gemini brain', 'gemini'], ['Brightspace iCal', 'brightspace'],
-            ['Alpha Vantage', 'alphavantage'], ['ntfy pushes', 'ntfy'],
-            ['Mealie', 'mealie'], ['wger', 'wger'], ['RSS news', 'rss'],
-          ] as const).map(([label, key]) => (
+            ['Gemini brain', 'gemini', 'https://aistudio.google.com/apikey'],
+            ['Brightspace iCal', 'brightspace', 'https://purdue.brightspace.com'],
+            ['Alpha Vantage', 'alphavantage', 'https://www.alphavantage.co/support/#api-key'],
+            ['ntfy pushes', 'ntfy', 'https://ntfy.sh'],
+            ['Mealie', 'mealie', null],
+            ['wger', 'wger', null],
+            ['RSS news', 'rss', null],
+          ] as const).map(([label, key, url]) => (
             <div key={key} className="flex items-center gap-2">
               <span className="w-32 text-xs">{label}</span>
               <Status ok={integ[key]} />
+              {url && !integ[key] && (
+                <a href={url} target="_blank" rel="noreferrer"
+                   className="text-[10px] text-hud-cyan/80 hover:text-hud-cyan underline underline-offset-2">
+                  get key
+                </a>
+              )}
             </div>
           ))}
         </div>
         <p className="text-[10px] text-hud-dim">
-          Unconfigured services are set in .env (see .env.example). Cleanup rules, category rules,
-          timezone, and brief time are managed there too; corrections you make in chat are learned automatically.
+          Every key is free — SETUP_APIS.md in the repo has step-by-step links for all of them.
+          Keys go in .env; the Agent Status tile on Home shows anything still missing.
+          Weather (Open-Meteo) and news (Google News/BBC) need no keys at all.
         </p>
       </div>
     </div>

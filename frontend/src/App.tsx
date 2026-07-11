@@ -11,6 +11,7 @@ import MasterToggle from './components/MasterToggle'
 import ApprovalCard from './components/ApprovalCard'
 import CalendarView from './components/CalendarView'
 import CleanupReview from './components/CleanupReview'
+import InboxView from './components/InboxView'
 import LeftColumn from './components/LeftColumn'
 import RightColumn from './components/RightColumn'
 import PreferencesTab from './components/tabs/PreferencesTab'
@@ -19,11 +20,12 @@ import WorkoutSplitTab from './components/tabs/WorkoutSplitTab'
 import AccountTab from './components/tabs/AccountTab'
 import FinancialsTab from './components/tabs/FinancialsTab'
 
-type View = 'home' | 'calendar' | 'cleanup' | 'preferences' | 'portfolio' | 'financials' | 'workout' | 'account'
+type View = 'home' | 'calendar' | 'inbox' | 'cleanup' | 'preferences' | 'portfolio' | 'financials' | 'workout' | 'account'
 
 const NAV: { id: View; label: string }[] = [
   { id: 'home', label: 'Home' },
   { id: 'calendar', label: 'Calendar' },
+  { id: 'inbox', label: 'Inbox' },
   { id: 'cleanup', label: 'Cleanup Review' },
 ]
 const TABS: { id: View; label: string }[] = [
@@ -139,32 +141,42 @@ export default function App() {
         {/* main area */}
         <main className="flex-1 min-w-0">
           {view === 'home' && (
-            <div className="h-full grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_380px] gap-3 p-3 overflow-y-auto xl:overflow-hidden">
-              {/* LEFT — weather · today agenda · due counts · tomorrow agenda */}
-              <div className="overflow-y-auto pr-1 order-2 xl:order-1">
-                <LeftColumn refreshKey={refreshKey} />
+            <div className="h-full grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)_400px] gap-3 p-3 overflow-y-auto xl:overflow-hidden">
+              {/* LEFT — weather · today agenda · due counts · tomorrow agenda · inbox */}
+              <div className="xl:h-full xl:overflow-y-auto pr-1 order-2 xl:order-1">
+                <LeftColumn refreshKey={refreshKey} onOpenInbox={() => setView('inbox')} />
               </div>
 
-              {/* CENTER — orb + mic + live transcript chat */}
-              <div className="flex flex-col items-center min-h-0 order-1 xl:order-2">
-                <StarSphere state={orbState} size={Math.min(340, window.innerWidth - 80)} />
-                <div className="-mt-5">
-                  <MicButton agentOn={agentOn} onOrbState={setOrbState} onTranscript={onTranscript} />
+              {/* CENTER — orb at true vertical center, live transcript filling the space below */}
+              <div className="grid grid-rows-[1fr_auto_1fr] justify-items-center min-h-0 order-1 xl:order-2">
+                <div /> {/* symmetric spacer so the sphere sits at the exact center */}
+                <div className="relative">
+                  <StarSphere state={orbState} size={Math.min(380, window.innerWidth - 80)} />
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-10">
+                    <MicButton agentOn={agentOn} onOrbState={setOrbState} onTranscript={onTranscript} />
+                  </div>
                 </div>
-                <div className="w-full max-w-2xl flex-1 min-h-56 mt-2">
+                <div className="w-full max-w-2xl min-h-0 pt-10 pb-1">
                   <ChatThread agentOn={agentOn} onThinking={onThinking} greeting={greeting} transcript={transcript} />
                 </div>
               </div>
 
               {/* RIGHT — news · stock squares · agent status (+ approvals on top) */}
-              <div className="overflow-y-auto pr-1 order-3 space-y-3">
-                {approvals.map((a) => (
-                  <ApprovalCard key={a.id} approval={a} onDone={() => { loadApprovals(); setRefreshKey((k) => k + 1) }} />
-                ))}
-                <RightColumn refreshKey={refreshKey} />
+              <div className="xl:h-full flex flex-col gap-3 pr-1 order-3 min-h-0">
+                {approvals.length > 0 && (
+                  <div className="space-y-3 max-h-72 overflow-y-auto shrink-0">
+                    {approvals.map((a) => (
+                      <ApprovalCard key={a.id} approval={a} onDone={() => { loadApprovals(); setRefreshKey((k) => k + 1) }} />
+                    ))}
+                  </div>
+                )}
+                <div className="flex-1 min-h-0">
+                  <RightColumn refreshKey={refreshKey} />
+                </div>
               </div>
             </div>
           )}
+          {view === 'inbox' && <InboxView />}
           {view === 'calendar' && <CalendarView />}
           {view === 'cleanup' && <CleanupReview />}
           {view === 'preferences' && <PreferencesTab />}

@@ -84,6 +84,17 @@ export interface Movers {
   gainers?: MoverRow[]; losers?: MoverRow[]; most_active?: MoverRow[]
   disclaimer?: string
 }
+export interface OptionContract {
+  type: string; strike: number; last: number; delta: number | null; iv_pct: number | null
+}
+export interface OptionsChain {
+  ticker: string; expiry: string; atm_strike: number | null; avg_iv_pct: number | null
+  contracts: OptionContract[]
+}
+export interface StrategistBrief {
+  brief?: string; note?: string; chains?: OptionsChain[]
+  generated_at?: string; disclaimer: string
+}
 export interface AgentStatus {
   agent_on: boolean
   llm: { model: string; calls_today: number; errors_today: number; last_call_at: string | null }
@@ -147,6 +158,7 @@ export const api = {
   weather: () => get<Weather>('/weather'),
   marketPicks: () => get<{ picks: StockPick[]; note?: string; disclaimer: string }>('/market/picks'),
   marketMovers: () => get<Movers>('/market/movers'),
+  strategist: (refresh = false) => get<StrategistBrief>(`/market/strategist?refresh=${refresh}`),
   agentStatus: () => get<AgentStatus>('/status'),
   news: () => get<NewsResult>('/news'),
 

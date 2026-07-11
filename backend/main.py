@@ -334,6 +334,12 @@ def market_movers_route() -> dict:
     return market_movers.fetch_movers()
 
 
+@app.get("/market/strategist")
+def market_strategist(refresh: bool = False) -> dict:
+    from tools import market_movers
+    return market_movers.fetch_strategist_brief(force=refresh)
+
+
 @app.get("/status")
 def status(db: Session = Depends(get_db)) -> dict:
     """Agent status for the HUD tile: on/off, LLM usage today, recent errors,
