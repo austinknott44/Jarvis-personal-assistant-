@@ -24,7 +24,7 @@ export default function ChatThread({
   const [turns, setTurns] = useState<(ChatTurn & { live?: boolean })[]>([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const lastSeqRef = useRef(-1)
 
   useEffect(() => {
@@ -52,8 +52,11 @@ export default function ChatThread({
     })
   }, [transcript])
 
+  // scroll ONLY the message list — scrollIntoView would drag every scrollable
+  // ancestor (the whole mobile page) down past the orb
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = listRef.current
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [turns])
 
   const send = async () => {
@@ -76,7 +79,7 @@ export default function ChatThread({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+      <div ref={listRef} className="flex-1 overflow-y-auto space-y-3 pr-2">
         {turns.length === 0 && (
           <p className="text-hud-dim text-sm text-center mt-8 hud-readout">
             {agentOn
@@ -87,7 +90,7 @@ export default function ChatThread({
         {turns.map((t, i) => (
           <div key={i} className={`flex ${t.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[80%] px-3 py-2 rounded-lg text-sm whitespace-pre-wrap ${
+              className={`max-w-[80%] px-3.5 py-2 rounded-lg text-[15px] leading-relaxed whitespace-pre-wrap ${
                 t.role === 'user'
                   ? 'bg-hud-blue/20 border border-hud-blue/40 text-slate-100'
                   : 'hud-panel text-hud-text'
@@ -98,7 +101,6 @@ export default function ChatThread({
             </div>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
       <div className="mt-3 flex gap-2">
         <input
@@ -107,7 +109,7 @@ export default function ChatThread({
           onKeyDown={(e) => e.key === 'Enter' && send()}
           disabled={!agentOn}
           placeholder={agentOn ? 'Message Jarvis — or press the mic and just talk…' : 'Jarvis is off'}
-          className="flex-1 bg-hud-panel border border-hud-border rounded-lg px-3 py-2 text-sm
+          className="flex-1 bg-hud-panel border border-hud-border rounded-lg px-3.5 py-2.5 text-[15px]
                      focus:outline-none focus:border-hud-cyan/60 disabled:opacity-40"
         />
         <button
