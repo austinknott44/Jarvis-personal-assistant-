@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jarvis-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD: jarvis
+      POSTGRES_DB: jarvis
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---- Optional lifestyle services (uncomment to use; Jarvis degrades gracefully without them) ----
+  # mealie:
+  #   image: ghcr.io/mealie-recipes/mealie:latest
+  #   container_name: jarvis-mealie
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9925:9000"
+  #   volumes:
+  #     - mealie-data:/app/data
+  #   environment:
+  #     ALLOW_SIGNUP: "true"
+  #
+  # wger:
+  #   image: wger/server:latest
+  #   container_name: jarvis-wger
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8000:80"
+  #   volumes:
+  #     - wger-data:/home/wger/media
+
+volumes:
+  pgdata:
+  # mealie-data:
+  # wger-data:
