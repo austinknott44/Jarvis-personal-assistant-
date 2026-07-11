@@ -9,7 +9,8 @@ code by a safety gate, not just prompts.
 **Docs:** [CLAUDE.md](CLAUDE.md) (the spec) · [BUILD_GUIDE.md](BUILD_GUIDE.md)
 (the map) · [WALKTHROUGH.md](WALKTHROUGH.md) (click-by-click setup) ·
 [SETUP_APIS.md](SETUP_APIS.md) (every key, with links) ·
-[SKILLS.md](SKILLS.md) (capability upgrades + dev-workflow skills).
+[SKILLS.md](SKILLS.md) (capability upgrades + dev-workflow skills) ·
+[IDEAS.md](IDEAS.md) (roadmap: automation + real financial value).
 
 ## What's built (all 8 phases scaffolded and wired)
 
